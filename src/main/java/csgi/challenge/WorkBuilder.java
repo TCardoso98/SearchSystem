@@ -15,47 +15,47 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class WorkBuilder {
-   private final Map<String, Broadcaster> broadcasterMap = new ConcurrentHashMap();
-   private final Executor executor = Executors.newVirtualThreadPerTaskExecutor();
-   private final List<Configuration> configurations = new ArrayList();
-   private final List<Worker<?>> workers = new ArrayList();
+	private final Map<String, Broadcaster> broadcasterMap = new ConcurrentHashMap<>();
+	private final Executor executor = Executors.newVirtualThreadPerTaskExecutor();
+	private final List<Configuration> configurations = new ArrayList<>();
+	private final List<Worker<?>> workers = new ArrayList<>();
 
-   public WorkBuilder() {
-   }
+	public WorkBuilder() {
+	}
 
-   public WorkBuilder addConfiguration(Configuration configuration) {
-      this.configurations.add(configuration);
-      return this;
-   }
+	public WorkBuilder addConfiguration(Configuration configuration) {
+		this.configurations.add(configuration);
+		return this;
+	}
 
-   public WorkBuilder build() {
-      for(Configuration configuration : this.configurations) {
-         Worker<?> worker = configuration.mode.value.get(configuration.workerInstanceNumber);
+	public WorkBuilder build() {
+		for (Configuration configuration : this.configurations) {
+			Worker<?> worker = configuration.mode.value.get(configuration.workerInstanceNumber);
 
-         for(String filePath : configuration.filePaths) {
-            ((Broadcaster)this.broadcasterMap.computeIfAbsent(filePath, (s) -> this.getBroadcaster(s, configuration.parserInstanceNumber))).addWorker(worker);
-         }
+			for (String filePath : configuration.filePaths) {
+				this.broadcasterMap.computeIfAbsent(filePath, (s) -> this.getBroadcaster(s, configuration.parserInstanceNumber)).addWorker(worker);
+			}
 
-         this.workers.add(worker);
-      }
+			this.workers.add(worker);
+		}
 
-      return this;
-   }
+		return this;
+	}
 
-   public Worker<?>[] execute() {
-      for(Broadcaster value : this.broadcasterMap.values()) {
-         value.execute(this.executor);
-      }
+	public Worker<?>[] execute() {
+		for (Broadcaster value : this.broadcasterMap.values()) {
+			value.execute(this.executor);
+		}
 
-      return (Worker[])this.workers.toArray(new Worker[0]);
-   }
+		return (Worker<?>[]) this.workers.toArray(new Worker[0]);
+	}
 
-   private Broadcaster getBroadcaster(String s, int parserInstanceNumber) {
-      try {
-         Parser parser = new Parser(s);
-         return new Broadcaster(parser, parserInstanceNumber, new WorkerAbstract[0]);
-      } catch (IOException e) {
-         throw new RuntimeException(e);
-      }
-   }
+	private Broadcaster getBroadcaster(String s, int parserInstanceNumber) {
+		try {
+			Parser parser = new Parser(s);
+			return new Broadcaster(parser, parserInstanceNumber);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
 }

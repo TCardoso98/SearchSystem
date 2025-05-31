@@ -3,12 +3,12 @@ package csgi.challenge.worker;
 import csgi.challenge.WorkerFactory;
 
 public enum WorkMode {
-   START_WITH_COUNTER(WordCounterWorker::new),
-   LONGER_THAN(WordLengthWorker::new);
+	START_WITH_COUNTER(WordCounterWorker::new),
+	LONGER_THAN(WordLengthWorker::new);
 
-   public final WorkerFactory value;
+	public final WorkerFactory value;
 
-   private WorkMode(WorkerFactory workerSupplier) {
-      this.value = workerSupplier;
-   }
+	WorkMode(WorkerFactory workerSupplier) {
+		this.value = workerSupplier;
+	}
 }

@@ -20,13 +20,13 @@ public class Parser implements Runnable {
 	public Parser(InputStreamReader in) throws IOException {
 		this.in = in;
 		this.tokenizer = new Tokenizer(in);
-		this.destiny = new ConcurrentLinkedQueue();
-		this.future = new CompletableFuture();
+		this.destiny = new ConcurrentLinkedQueue<>();
+		this.future = new CompletableFuture<>();
 	}
 
 	public Parser(String filePath) throws IOException {
 		this(new FileReader(filePath));
-		this.future.thenAccept((unused) -> {
+		this.future.thenAccept((_) -> {
 			try {
 				this.in.close();
 			} catch (IOException _) {
@@ -53,7 +53,7 @@ public class Parser implements Runnable {
 	}
 
 	public Token getToken() {
-		return (Token) this.destiny.poll();
+		return this.destiny.poll();
 	}
 
 	public CompletableFuture<Void> get() {
