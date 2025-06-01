@@ -2,9 +2,8 @@ package csgi.challenge;
 
 import csgi.challenge.broadcaster.Broadcaster;
 import csgi.challenge.configuration.Configuration;
-import csgi.challenge.parser.Parser;
+import csgi.challenge.parser.ParserImpl;
 import csgi.challenge.worker.Worker;
-import csgi.challenge.worker.WorkerAbstract;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,7 +29,7 @@ public class WorkBuilder {
 
 	public WorkBuilder build() {
 		for (Configuration configuration : this.configurations) {
-			Worker<?> worker = configuration.mode.value.get(configuration.workerInstanceNumber);
+			Worker<?> worker = configuration.mode.value.get();
 
 			for (String filePath : configuration.filePaths) {
 				this.broadcasterMap.computeIfAbsent(filePath, (s) -> this.getBroadcaster(s, configuration.parserInstanceNumber)).addWorker(worker);
@@ -42,18 +41,11 @@ public class WorkBuilder {
 		return this;
 	}
 
-	public Worker<?>[] execute() {
-		for (Broadcaster value : this.broadcasterMap.values()) {
-			value.execute(this.executor);
-		}
-
-		return (Worker<?>[]) this.workers.toArray(new Worker[0]);
-	}
 
 	private Broadcaster getBroadcaster(String s, int parserInstanceNumber) {
 		try {
-			Parser parser = new Parser(s);
-			return new Broadcaster(parser, parserInstanceNumber);
+			ParserImpl parser = new ParserImpl(s);
+			return new Broadcaster(parser);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

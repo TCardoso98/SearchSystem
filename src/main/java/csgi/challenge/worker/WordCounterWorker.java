@@ -3,19 +3,17 @@ package csgi.challenge.worker;
 
 import csgi.challenge.Result;
 import csgi.challenge.token.Token;
+import csgi.challenge.token.TokenType;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class WordCounterWorker extends WorkerAbstract<Integer> {
 	private final AtomicInteger counter = new AtomicInteger();
 
-	WordCounterWorker(int numberOfInstances) {
-		super(numberOfInstances);
-	}
 
 	@Override
 	protected void onToken(Token token) {
-		if (!token.value().isEmpty() && token.isWord()) {
+		if (!token.value().isEmpty() && token.type() == TokenType.WORD) {
 			char firstChar = token.value().charAt(0);
 			if (firstChar == 'm' || firstChar == 'M') {
 				this.counter.incrementAndGet();
@@ -26,7 +24,7 @@ public class WordCounterWorker extends WorkerAbstract<Integer> {
 
 	@Override
 	protected Result<Integer> get() {
-		return new Result<>() {
+		return new Result<Integer>() {
 			private final int result;
 
 			{

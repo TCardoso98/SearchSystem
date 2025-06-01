@@ -7,11 +7,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 public interface Worker<T> {
-   void process(Token token);
+	void process(Token token);
 
-   CompletableFuture<Result<T>> getResultAsync();
+	CompletableFuture<Result<T>> getResultAsync();
 
-   void complete();
+	void complete();
 
-   void execute(Executor var1);
+	boolean isCompleted();
 }

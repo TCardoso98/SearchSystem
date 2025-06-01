@@ -3,63 +3,37 @@ package csgi.challenge.worker;
 import csgi.challenge.Result;
 import csgi.challenge.token.Token;
 
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class WorkerAbstract<T> implements Worker<T>, Runnable, AutoCloseable {
-	private final Queue<Token> queue = new ConcurrentLinkedQueue<>();
-	private final AtomicBoolean isClose;
-	private final CompletableFuture<Result<T>> future = new CompletableFuture<>();
-	private final int nInstances;
+public abstract class WorkerAbstract<T> implements Worker<T> {
 
-	WorkerAbstract(int numberOfInstances) {
-		this.nInstances = numberOfInstances;
-		this.isClose = new AtomicBoolean();
-	}
+
+	private final AtomicBoolean isComplete = new AtomicBoolean(false);
+	private final CompletableFuture<Result<T>> future = new CompletableFuture<>();
+
 
 	public void process(Token token) {
-		this.queue.add(token);
+		onToken(token);
 	}
 
-	protected abstract void onToken(Token token) throws Exception;
+	protected abstract void onToken(Token token);
 
-	public void run() {
-		for (Token token = this.queue.poll(); !this.isClose.get() || token != null; token = this.queue.poll()) {
-			if (token != null && token.value() != null) {
-				try {
-					this.onToken(token);
-				} catch (Exception e) {
-					this.future.completeExceptionally(e);
-				}
-			}
-		}
-
-		this.future.complete(this.get());
+	@Override
+	public boolean isCompleted() {
+		return isComplete.get();
 	}
 
-	public void close() {
-		this.isClose.set(true);
-	}
+	protected abstract Result<T> get();
 
 	public CompletableFuture<Result<T>> getResultAsync() {
 		return this.future;
 	}
 
-	protected abstract Result<T> get();
-
 	public void complete() {
-		this.close();
+		this.isComplete.set(true);
 	}
 
 	public abstract WorkMode getMode();
-
-	public void execute(Executor executor) {
-		for (int i = 0; i < this.nInstances; ++i) {
-			executor.execute(this);
-		}
-
-	}
 }

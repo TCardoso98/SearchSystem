@@ -1,40 +1,64 @@
 package csgi.challenge.token;
 
+import javax.naming.OperationNotSupportedException;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StreamTokenizer;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
-public class Tokenizer {
-   private final StreamTokenizer tokenizer;
-   private int currToken;
-   private static final char[] SPECIAL_CHARS = new char[]{'.', ',', ':', ';', '-', '_', '?', '!', '"', '#', '$', '%', '&', '/', '(', ')', '=', '»', '«', '@', '£', '§', '{', '[', ']', '}', '´', '`', '+', '*', '¨', 'º', 'ª', '~', '^', '\\', '/', '€', '<', '>'};
+public class Tokenizer implements Iterator<Token> {
+	private final StreamTokenizer tokenizer;
+	private final AtomicReference<Token> currToken;
+	private static final Set<Character> SET_SPECIAL_CHARS = new HashSet<>(List.of('.', ',', ':', ';', '-', '_', '?', '!', '"', '#', '$', '%'
+			, '&', '/', '(', ')', '=', '»', '«', '@', '£', '§', '{', '[', ']', '}', '´', '`', '+', '*', '¨', 'º', 'ª'
+			, '~', '^', '\\', '/', '€', '<', '>'));
 
-   public Tokenizer(Reader reader) throws IOException {
-      this.tokenizer = new StreamTokenizer(reader);
+	public Tokenizer(Reader reader) throws IOException {
+		this.tokenizer = new StreamTokenizer(reader);
+		for (char specialChar : SET_SPECIAL_CHARS) {
+			this.tokenizer.ordinaryChar(specialChar);
+		}
+		this.currToken = new AtomicReference<>(getNextToken());
+	}
 
-      for(char specialChar : SPECIAL_CHARS) {
-         this.tokenizer.quoteChar(specialChar);
-      }
+	private synchronized TokenImpl getNextToken() throws IOException {
+		tokenizer.nextToken();
+		return new TokenImpl(tokenizer.sval, getType(tokenizer.ttype, tokenizer.sval));
+	}
 
-      this.currToken = this.tokenizer.nextToken();
-   }
+	public boolean hasNext() {
+		return currToken.get().type() != TokenType.EOF;
+	}
 
-   public boolean hasNext() {
-      return this.currToken != StreamTokenizer.TT_EOF;
-   }
+	public synchronized Token next() {
+		if (!hasNext()) {
+			throw new NoSuchElementException(new EOFException());
+		}
+		try {
+			return currToken.getAndSet(getNextToken());
+		} catch (IOException e) {
+			throw new NoSuchElementException(e);
+		}
+	}
 
-   public Token next() throws IOException {
-      final String result = this.tokenizer.sval;
-      final boolean isWord = this.currToken == StreamTokenizer.TT_WORD;
-      this.currToken = this.tokenizer.nextToken();
-      return new Token() {
-         public String value() {
-            return result;
-         }
-
-         public boolean isWord() {
-            return isWord;
-         }
-      };
-   }
+	public TokenType getType(int type, String value) {
+		switch (type) {
+			case StreamTokenizer.TT_NUMBER -> {
+				return TokenType.NUMBER;
+			}
+			case StreamTokenizer.TT_WORD -> {
+				return SET_SPECIAL_CHARS.contains(value.charAt(0)) ? TokenType.SPECIAL : TokenType.WORD;
+			}
+			case StreamTokenizer.TT_EOL -> {
+				return TokenType.EOL;
+			}
+			case StreamTokenizer.TT_EOF -> {
+				return TokenType.EOF;
+			}
+			default -> throw new IllegalArgumentException();
+		}
+	}
 }

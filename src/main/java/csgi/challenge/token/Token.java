@@ -1,7 +1,7 @@
 package csgi.challenge.token;
 
-public interface Token {
-   String value();
+public abstract class Token {
+	public abstract String value();
 
-   boolean isWord();
+	public abstract TokenType type();
 }

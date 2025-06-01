@@ -2,6 +2,7 @@ package csgi.challenge.worker;
 
 import csgi.challenge.Result;
 import csgi.challenge.token.Token;
+import csgi.challenge.token.TokenType;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -11,13 +12,10 @@ public class WordLengthWorker extends WorkerAbstract<String[]> {
 	private static final int MAX_WORD_SIZE = 1;
 	private static final int MIN_WORD_SIZE = 1;
 
-	WordLengthWorker(int numberOfInstances) {
-		super(numberOfInstances);
-	}
 
 	@Override
-	protected void onToken(Token token) throws Exception {
-		if (token.isWord()) {
+	protected void onToken(Token token) {
+		if (token.type() == TokenType.WORD) {
 			int length = token.value().length();
 			if (length >= MIN_WORD_SIZE && length <= MAX_WORD_SIZE) {
 				this.words.add(token.value());

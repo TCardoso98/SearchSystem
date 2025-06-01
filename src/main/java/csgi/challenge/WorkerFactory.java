@@ -1,7 +1,7 @@
 package csgi.challenge;
 
-import csgi.challenge.worker.WorkerAbstract;
+import csgi.challenge.worker.Worker;
 
 public interface WorkerFactory {
-   WorkerAbstract<?> get(int var1);
+	Worker<?> get(int var1);
 }
