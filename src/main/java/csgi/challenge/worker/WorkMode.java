@@ -1,16 +1,15 @@
 package csgi.challenge.worker;
 
-import csgi.challenge.WorkerFactory;
 
 import java.util.function.Supplier;
 
 public enum WorkMode {
-	START_WITH_COUNTER(WordCounterWorker::new),
-	LONGER_THAN(WordLengthWorker::new);
+	START_WITH_M_COUNTER(WordCounterWorker::new),
+	LONGER_THAN_5(WordLengthWorker::new);
 
-	public final Supplier<Worker<?>> value;
+	public final Supplier<Worker<?, ?>> value;
 
-	WorkMode(Supplier<Worker<?>> workerSupplier) {
+	WorkMode(Supplier<Worker<?, ?>> workerSupplier) {
 		this.value = workerSupplier;
 	}
 }

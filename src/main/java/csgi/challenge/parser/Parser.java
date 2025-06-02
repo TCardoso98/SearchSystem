@@ -1,16 +1,15 @@
 package csgi.challenge.parser;
 
-import csgi.challenge.token.Token;
+import java.util.concurrent.CompletableFuture;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Executor;
+public interface Parser<T> extends Runnable, AutoCloseable {
 
-public interface Parser extends AutoCloseable {
-
-
-	Token getToken();
 
 	boolean hasNext();
+
+	boolean isComplete();
+
+	T poll();
+
+	CompletableFuture<?> waitCompletion();
 }

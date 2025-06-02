@@ -7,17 +7,18 @@ import csgi.challenge.token.TokenType;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class WordLengthWorker extends WorkerAbstract<String[]> {
+public class WordLengthWorker extends WorkerAbstract<Token, Result<String[]>> {
 	private final Collection<String> words = new ConcurrentLinkedQueue<>();
-	private static final int MAX_WORD_SIZE = 1;
-	private static final int MIN_WORD_SIZE = 1;
+	//private static final int MAX_WORD_SIZE = -1;
+	private static final int MIN_WORD_SIZE = 5;
 
 
 	@Override
 	protected void onToken(Token token) {
 		if (token.type() == TokenType.WORD) {
-			int length = token.value().length();
-			if (length >= MIN_WORD_SIZE && length <= MAX_WORD_SIZE) {
+			String value = token.value();
+			int length = value.length();
+			if (length >= MIN_WORD_SIZE) {
 				this.words.add(token.value());
 			}
 		}
@@ -38,6 +39,6 @@ public class WordLengthWorker extends WorkerAbstract<String[]> {
 	}
 
 	public WorkMode getMode() {
-		return WorkMode.LONGER_THAN;
+		return WorkMode.LONGER_THAN_5;
 	}
 }

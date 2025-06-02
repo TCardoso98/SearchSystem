@@ -1,6 +1,6 @@
 package csgi.challenge.token;
 
-public class TokenImpl extends Token {
+public class TokenImpl implements Token {
 	private final String value;
 	private final TokenType type;
 

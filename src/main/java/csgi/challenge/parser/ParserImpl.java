@@ -3,26 +3,21 @@ package csgi.challenge.parser;
 import csgi.challenge.token.Token;
 import csgi.challenge.token.Tokenizer;
 
-import java.io.EOFException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.*;
 
-public class ParserImpl implements Parser {
+public class ParserImpl extends ParserAbstract<Token> {
 	private final Tokenizer tokenizer;
 	private final InputStreamReader in;
-	private final AtomicBoolean isComplete;
+	private final BlockingQueue<Token> queue;
 
 	public ParserImpl(InputStreamReader in) throws IOException {
+		super();
 		this.in = in;
 		this.tokenizer = new Tokenizer(in);
-		this.isComplete = new AtomicBoolean(false);
+		this.queue = new ArrayBlockingQueue<>(100);
 	}
 
 	public ParserImpl(String filePath) throws IOException {
@@ -30,28 +25,51 @@ public class ParserImpl implements Parser {
 	}
 
 	public boolean hasNext() {
-		return !isComplete.get() && tokenizer.hasNext();
+		return !complete.get() && tokenizer.hasNext();
 	}
 
-	public synchronized Token getToken() {
-		if (isComplete.get()) {
+	@Override
+	public boolean isComplete() {
+		return complete.get() && queue.peek() == null;
+	}
+
+	public Token getToken() {
+		if (complete.get()) {
 			throw new IllegalStateException("Parser already closed");
 		}
-
 		Token result = tokenizer.next();
-		if (!this.tokenizer.hasNext()) {
-			close();
-		}
+		complete.compareAndSet(false, !this.tokenizer.hasNext());
 		return result;
 
 	}
 
+	public Token poll() {
+		return queue.poll();
+	}
+
+
 	public void close() {
-		this.isComplete.set(true);
+		super.close();
 		try {
 			in.close();
 		} catch (IOException ignored) {
+		}
+	}
+
+	@Override
+	public void run() {
+		while (hasNext()) {
+			Token token = this.getToken();
+			for (; token != null; ) {
+				try {
+					queue.put(token);
+					break;
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
 
 		}
+		complete.compareAndSet(false, true);
 	}
 }

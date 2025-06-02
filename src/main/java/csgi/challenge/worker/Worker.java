@@ -1,15 +1,11 @@
 package csgi.challenge.worker;
 
-import csgi.challenge.Result;
-import csgi.challenge.token.Token;
-
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
-public interface Worker<T> {
-	void process(Token token);
+public interface Worker<T, R> extends Runnable {
+	void process(T token);
 
-	CompletableFuture<Result<T>> getResultAsync();
+	CompletableFuture<R> getResultAsync();
 
 	void complete();
 

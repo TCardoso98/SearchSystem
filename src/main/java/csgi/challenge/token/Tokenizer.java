@@ -1,13 +1,13 @@
 package csgi.challenge.token;
 
-import javax.naming.OperationNotSupportedException;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StreamTokenizer;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+
 import java.util.concurrent.atomic.AtomicReference;
+
 
 public class Tokenizer implements Iterator<Token> {
 	private final StreamTokenizer tokenizer;
@@ -24,27 +24,33 @@ public class Tokenizer implements Iterator<Token> {
 		this.currToken = new AtomicReference<>(getNextToken());
 	}
 
-	private synchronized TokenImpl getNextToken() throws IOException {
-		tokenizer.nextToken();
-		return new TokenImpl(tokenizer.sval, getType(tokenizer.ttype, tokenizer.sval));
+	private TokenImpl getNextToken() throws IOException {
+
+		int i = tokenizer.nextToken();
+		TokenType type = getType(i, tokenizer.sval);
+		String value = type == TokenType.SPECIAL ? String.valueOf((char) i) : tokenizer.sval;
+		return new TokenImpl(value, type);
 	}
 
 	public boolean hasNext() {
+
 		return currToken.get().type() != TokenType.EOF;
 	}
 
-	public synchronized Token next() {
+	public Token next() {
 		if (!hasNext()) {
 			throw new NoSuchElementException(new EOFException());
 		}
+
 		try {
 			return currToken.getAndSet(getNextToken());
 		} catch (IOException e) {
 			throw new NoSuchElementException(e);
 		}
+
 	}
 
-	public TokenType getType(int type, String value) {
+	public static TokenType getType(int type, String value) {
 		switch (type) {
 			case StreamTokenizer.TT_NUMBER -> {
 				return TokenType.NUMBER;
@@ -58,7 +64,9 @@ public class Tokenizer implements Iterator<Token> {
 			case StreamTokenizer.TT_EOF -> {
 				return TokenType.EOF;
 			}
-			default -> throw new IllegalArgumentException();
+			default -> {
+				return TokenType.SPECIAL;
+			}
 		}
 	}
 }

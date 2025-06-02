@@ -1,39 +1,59 @@
 package csgi.challenge.worker;
 
-import csgi.challenge.Result;
-import csgi.challenge.token.Token;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class WorkerAbstract<T> implements Worker<T> {
+public abstract class WorkerAbstract<T, R> implements Worker<T, R> {
+	private final AtomicBoolean isComplete;
+	private final CompletableFuture<R> future;
+	private final BlockingQueue<T> pending;
 
+	protected WorkerAbstract() {
+		pending = new ArrayBlockingQueue<>(100);
+		isComplete = new AtomicBoolean(false);
+		future = new CompletableFuture<>();
 
-	private final AtomicBoolean isComplete = new AtomicBoolean(false);
-	private final CompletableFuture<Result<T>> future = new CompletableFuture<>();
-
-
-	public void process(Token token) {
-		onToken(token);
 	}
 
-	protected abstract void onToken(Token token);
+	public void process(T token) {
+		for (; ; ) {
+			try {
+				pending.put(token);
+				return;
+			} catch (InterruptedException ignored) {
+
+			}
+		}
+	}
+
+	protected abstract void onToken(T token);
 
 	@Override
 	public boolean isCompleted() {
-		return isComplete.get();
+		return isComplete.get() && pending.peek() == null;
 	}
 
-	protected abstract Result<T> get();
+	protected abstract R get();
 
-	public CompletableFuture<Result<T>> getResultAsync() {
+	public CompletableFuture<R> getResultAsync() {
 		return this.future;
 	}
 
 	public void complete() {
 		this.isComplete.set(true);
+
 	}
 
 	public abstract WorkMode getMode();
+
+	@Override
+	public void run() {
+		while (!this.isCompleted()) {
+			T t = pending.poll();
+			if (t != null) {
+				onToken(t);
+			}
+		}
+		future.complete(get());
+	}
 }
